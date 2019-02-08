@@ -1,0 +1,21 @@
+SELECT        d.zonar_deploymentid, d.zonar_relatedopportunity AS opportunityid, d.zonar_deploymenttypename, f.processidname AS FullDeployment_processidname, f.activestageidname AS FullDeployment_stagename, 
+                         i.processidname AS InstallDeployment_processidname, i.activestageidname AS InstallDeployment_stagename, s.processidname AS ServiceOnlyDeployment_processidname, 
+                         s.activestageidname AS ServiceOnlyDeployment_stagename, d.zonar_name, d.owneridname, d.statecodename, d.statuscodename, d.zonar_accountcode, d.zonar_accountname, d.zonar_anticipatedgolivedate, 
+                         d.zonar_documentids, d.createdon, d.createdbyname, d.zonar_actualclosedate, CASE WHEN d .statuscodename = 'Complete' THEN datediff(d, d .createdon, d .zonar_actualclosedate) 
+                         WHEN d .statuscodename NOT IN ('Cancelled', 'Complete') THEN datediff(d, d .createdon, getdate()) END AS daysInProgress, CASE WHEN o.zonar_typeofbusinessname IS NULL OR
+                         o.zonar_typeofbusinessname = 'unknown' THEN CASE WHEN d .zonar_newcustomername = 'No' THEN 'Existing' WHEN d .zonar_newcustomername = 'Yes' THEN 'New' END ELSE o.zonar_typeofbusinessname END
+                          AS zonar_typeofbusinessname, d.db_completedowneridname, d.zonar_2020attributesparamsupdate, d.zonar_2020setupstatus, d.zonar_3gupgradeemail, d.zonar_ac, d.zonar_accountservices, 
+                         d.zonar_acloggingupdate, d.zonar_assetlist, d.zonar_cm, d.zonar_configreleased, d.zonar_crmconnection, d.zonar_customercontacted, d.zonar_customtrainingmaterialstatus, d.zonar_enabledunits, 
+                         d.zonar_expectedinstallationdate, d.zonar_expectedshipdate, d.zonar_expectedtrainingdate, d.zonar_focusareasfortraining, d.zonar_forms, d.zonar_gtc, d.zonar_gtceduloguser, d.zonar_gtcpermissions, 
+                         d.zonar_handoffstatus, d.zonar_installationstatus, d.zonar_installdoccreated, d.zonar_installdocuploaded, d.zonar_installer, d.zonar_integrationobjectives, d.zonar_iodetails, d.zonar_needsremotetraining, 
+                         d.zonar_oemservices, d.zonar_onboardingproject, d.zonar_onsiteqcstatus, d.zonar_onstietrainingstatus, d.zonar_quantityofunitsinstalled, d.zonar_remoteqcstatus, d.zonar_requesteddeliverydate, 
+                         d.zonar_requestedshipdate, d.zonar_rfifororder, d.zonar_salesorderno, d.zonar_salesorderverified, d.zonar_sendwelcomeemail, d.zonar_sfid, d.zonar_shippingtimeline, d.zonar_survey, d.zonar_svccreated, 
+                         d.zonar_trainingexpectations, d.zonar_trainingschedule, d.zonar_travelstatus, d.zonar_newcustomer, d.zonar_newcustomername
+FROM            dbo.CRM_Zonar_Deployment AS d LEFT OUTER JOIN
+                         dbo.CRM_DeploymentFullDeploymentProcess AS f ON d.zonar_deploymentid = f.bpf_zonar_deploymentid LEFT OUTER JOIN
+                         dbo.CRM_DeploymentInstallDeploymentProcess AS i ON d.zonar_deploymentid = i.bpf_zonar_deploymentid LEFT OUTER JOIN
+                         dbo.CRM_DeploymentServiceOnlyProcess AS s ON d.zonar_deploymentid = s.bpf_zonar_deploymentid LEFT OUTER JOIN
+                         dbo.CRM_DeploymentTrainingDeploymentProcess AS t ON d.zonar_deploymentid = t.bpf_zonar_deploymentid LEFT OUTER JOIN
+                         dbo.CRM_Opportunity AS O ON d.zonar_relatedopportunity = O.opportunityid AND O.sql_deleted_ind = 0
+WHERE        (d.createdon > '12/31/2015') OR
+                         (O.salesstagecodename = 'Active')
