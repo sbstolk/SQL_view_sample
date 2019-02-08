@@ -1,0 +1,45 @@
+
+ALTER PROCEDURE [dbo].[PopulateGPSDailyTotalsByCustomer]
+	@ForDate DateTime = NULL
+AS
+BEGIN
+	DECLARE @UseForDate AS DateTime
+	SET @UseForDate = ISNULL(@ForDate, DATEADD(DD, -1, GETDATE()))
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	DELETE FROM ZONAR_BI.dbo.GPSDailyTotalsByCustomer
+	WHERE [Date] = @ForDate
+
+	INSERT INTO ZONAR_BI.dbo.GPSDailyTotalsByCustomer
+	SELECT
+		MAX(dd.[Date]) AS [Date]
+		,MAX(dd.[FirstDayOfMonth]) AS [First Day of Month]
+		,MAX(dd.[LastDayOfMonth]) AS [Last Day of Month]
+		,dc.CustomerNo AS [Customer Code]
+		,MAX(dc.[Channel]) AS [Channel]
+		,CASE
+			WHEN MAX(dc.[CustomerNo]) IS NULL THEN 'INVALID'
+			ELSE MAX(dc.[Customer Group])
+		END AS [Market Segment]
+		,MAX(dc.[State]) AS [State]
+		,COUNT(cbc.unique_id) - SUM(cbc.unit_remove) AS [Total Units]
+		,SUM(cbc.unit_add) AS [Total Units Added]
+		,-SUM(cbc.unit_remove) AS [Total Units Removed]
+		,SUM(cbc.recent_data) AS [Total Recently Active Units]
+	FROM
+		ZONAR_BI.dbo.DimDate dd
+		JOIN ZONAR_BI.dbo.DimCustomer dc
+			ON dc.InGTC = 1
+		LEFT OUTER JOIN [ZONAR_BI].[dbo].[GPSCountByCustomer] cbc
+			ON cbc.[Date] = dd.[date]
+			AND cbc.[customer_code] = dc.CustomerNo
+	WHERE
+		dd.[Date] = @ForDate
+	GROUP BY
+		dd.[date], dc.CustomerNo
+	ORDER BY
+		dd.[date], dc.CustomerNo
+END
